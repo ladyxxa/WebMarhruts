@@ -12,15 +12,13 @@ function getCurrentDateFormatted() {
     return day + month + year;
 }
 
-// Создаём HTTP-сервер
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     
-    // Устанавливаем заголовок для plain-text ответа
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     
-    console.log(`Request: ${pathname}`); // Для отладки в логах Render
+    console.log(`Request: ${pathname}`); 
     
     const addMatch = pathname.match(/^\/add\/(\d+)\/(\d+)$/);
     if (addMatch) {
@@ -33,7 +31,6 @@ const server = http.createServer((req, res) => {
         return;
     }
     
-    // ========== МАРШРУТ В: /mpy/y1/y2 ==========
     const mpyMatch = pathname.match(/^\/mpy\/(\d+)\/(\d+)$/);
     if (mpyMatch) {
         const y1 = parseInt(mpyMatch[1], 10);
@@ -45,8 +42,6 @@ const server = http.createServer((req, res) => {
         return;
     }
     
-    // ========== МАРШРУТ А: /DDMMYY (ПРОВЕРЯЕМ ТОЛЬКО 6 ЦИФР И НИЧЕГО БОЛЬШЕ) ==========
-    // Проверяем, что путь состоит ровно из слэша и 6 цифр, и ничего после этого
     const dateMatch = pathname.match(/^\/(\d{6})$/);
     if (dateMatch) {
         const requestedDate = dateMatch[1];
@@ -66,10 +61,6 @@ const server = http.createServer((req, res) => {
     if (pathname === '/') {
         res.statusCode = 200;
         res.end(
-            'Available endpoints:\n' +
-            '• /' + getCurrentDateFormatted() + ' - returns your login (only if date matches today)\n' +
-            '• /add/x1/x2 - returns sum (example: /add/15/30 -> 45)\n' +
-            '• /mpy/y1/y2 - returns product (example: /mpy/4/5 -> 20)\n'
         );
         return;
     }
