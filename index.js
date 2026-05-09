@@ -1,71 +1,99 @@
 const http = require('http');
-const url = require('url');
 
-const YOUR_LOGIN = "ladyxxa";
+// ВАШ ЛОГИН - ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ!
+const LOGIN = "ladyxxa";
 
-// Функция для получения текущей даты в формате DDMMYY
-function getCurrentDateFormatted() {
+// Функция текущей даты DDMMYY
+function getCurrentDate() {
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = String(now.getFullYear()).slice(-2);
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear().toString().slice(-2);
     return day + month + year;
 }
 
+// СОЗДАЁМ СЕРВЕР
 const server = http.createServer((req, res) => {
-    const parsedUrl = url.parse(req.url, true);
-    const pathname = parsedUrl.pathname;
+    const url = req.url;
+    const method = req.method;
     
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    console.log(`Получен запрос: ${method} ${url}`); // Для отладки
     
-    console.log(`Request: ${pathname}`); 
-    
-    const addMatch = pathname.match(/^\/add\/(\d+)\/(\d+)$/);
-    if (addMatch) {
-        const x1 = parseInt(addMatch[1], 10);
-        const x2 = parseInt(addMatch[2], 10);
-        const sum = x1 + x2;
-        
-        res.statusCode = 200;
-        res.end(sum.toString());
+    // ТОЛЬКО GET ЗАПРОСЫ
+    if (method !== 'GET') {
+        res.writeHead(405, { 'Content-Type': 'text/plain' });
+        res.end('Method Not Allowed');
         return;
     }
     
-    const mpyMatch = pathname.match(/^\/mpy\/(\d+)\/(\d+)$/);
-    if (mpyMatch) {
-        const y1 = parseInt(mpyMatch[1], 10);
-        const y2 = parseInt(mpyMatch[2], 10);
-        const product = y1 * y2;
-        
-        res.statusCode = 200;
-        res.end(product.toString());
+    // ========== 1. КОРНЕВОЙ МАРШРУТ / ==========
+    if (url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Server is working! Try /add/5/3 or /mpy/4/2 or /' + getCurrentDate());
         return;
     }
     
-    const dateMatch = pathname.match(/^\/(\d{6})$/);
+    // ========== 2. МАРШРУТ /add/число/число ==========
+    if (url.startsWith('/add/')) {
+        const parts = url.split('/');
+        if (parts.length === 4) {
+            const x1 = parseInt(parts[2]);
+            const x2 = parseInt(parts[3]);
+            
+            if (!isNaN(x1) && !isNaN(x2)) {
+                const result = x1 + x2;
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end(result.toString());
+                return;
+            }
+        }
+    }
+    
+    // ========== 3. МАРШРУТ /mpy/число/число ==========
+    if (url.startsWith('/mpy/')) {
+        const parts = url.split('/');
+        if (parts.length === 4) {
+            const y1 = parseInt(parts[2]);
+            const y2 = parseInt(parts[3]);
+            
+            if (!isNaN(y1) && !isNaN(y2)) {
+                const result = y1 * y2;
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end(result.toString());
+                return;
+            }
+        }
+    }
+    
+    // ========== 4. МАРШРУТ /DDMMYY (ровно 6 цифр после слэша) ==========
+    // Проверяем, что URL состоит из слэша и ровно 6 цифр
+    const dateMatch = url.match(/^\/(\d{6})$/);
     if (dateMatch) {
         const requestedDate = dateMatch[1];
-        const currentDate = getCurrentDateFormatted();
+        const currentDate = getCurrentDate();
         
         if (requestedDate === currentDate) {
-            res.statusCode = 200;
-            res.end(YOUR_LOGIN);
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(LOGIN);
         } else {
-            res.statusCode = 404;
-            res.end(`Wrong date. Today is ${currentDate}`);
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end(`Wrong date. Expected ${currentDate}, got ${requestedDate}`);
         }
         return;
     }
     
-    // ========== КОРНЕВОЙ МАРШРУТ: / ==========
-    if (pathname === '/') {
-        res.statusCode = 200;
-        res.end(
-        );
-        return;
-    }
-    
-    // ========== 404 ДЛЯ ВСЕХ ОСТАЛЬНЫХ ПУТЕЙ ==========
-    res.statusCode = 404;
-    res.end('Not found. Use /, /add/x1/x2, /mpy/y1/y2, or /DDMMYY');
+    // ========== 5. ВСЁ ОСТАЛЬНОЕ ==========
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found. Use: /add/x1/x2, /mpy/y1/y2, or /' + getCurrentDate());
+});
+
+// ЗАПУСК СЕРВЕРА
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    console.log(`📅 Сегодняшняя дата: ${getCurrentDate()}`);
+    console.log(`🔑 Ваш логин: ${LOGIN}`);
+    console.log(`✅ Проверьте: http://localhost:${PORT}/`);
+    console.log(`➕ http://localhost:${PORT}/add/5/3`);
+    console.log(`✖️ http://localhost:${PORT}/mpy/4/2`);
 });
